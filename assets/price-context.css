@@ -1,0 +1,10 @@
+/* The view date locates the opinion; the two nodes identify return endpoints. */
+.price-reference{display:flex;align-items:baseline;flex-wrap:wrap;gap:3px 10px;margin:12px 0;color:var(--text-soft);font-size:11px}
+.price-reference>span:first-child{flex-basis:100%;color:var(--muted)}.price-reference b{font-size:13px;font-variant-numeric:tabular-nums}.price-reference small{color:var(--muted);font-size:10px}
+.price-comparison{margin:12px 0;padding:12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-soft)}
+.price-pair{display:grid;grid-template-columns:minmax(0,1fr) 16px minmax(0,1fr);align-items:center;gap:9px}
+.price-node{min-width:0;display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 5px}.price-node-label,.price-node-date,.price-node-status{flex-basis:100%}
+.price-node-label{font-size:10px;color:var(--muted)}.price-node-value{font-size:19px;line-height:1.5;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.price-node-unit{font-size:10px;color:var(--text-soft)}.price-node-date{font-size:11px;color:var(--text-soft);font-variant-numeric:tabular-nums}.price-node-status{font-size:10px;color:var(--muted)}
+.price-arrow{color:var(--muted);font-size:16px}.price-pair-note{font-size:10px;line-height:1.7;color:var(--muted);margin:9px 0 0}
+@media(max-width:760px){.price-node-value{font-size:18px}.price-pair{gap:7px}.price-comparison{padding:10px}.price-reference{font-size:11px}}

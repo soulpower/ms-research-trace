@@ -1,0 +1,47 @@
+.review-page .sidebar {gap:13px;}
+.review-page .sidebar label {display:grid; gap:7px; color:var(--muted); font-size:10px;}
+.review-page .sidebar select {width:100%;}
+.review-page .sidebar-foot {margin-top:auto;}
+.review-intro {padding:8px 0 16px;}
+.review-intro h1 {font-size:25px; line-height:1.5; margin:8px 0; letter-spacing:.01em;}
+.review-intro p {color:var(--text-soft); font-size:12px; line-height:1.8;}
+.review-mode {display:flex; flex-wrap:wrap; gap:8px; margin:16px 0;}
+.review-mode button {border:1px solid var(--border-strong); border-radius:7px; background:var(--surface-soft); padding:10px 14px; color:var(--text-soft); font-size:12px;}
+.review-mode button[aria-pressed="true"] {border-color:#4b8498; color:#b6e9ec; background:#123247;}
+.review-metrics {margin:16px 0;}
+.review-metrics b {font-variant-numeric:tabular-nums;}
+.review-cards {display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin:16px 0;}
+.review-case {min-width:0; padding:18px; background:var(--surface); border:1px solid var(--border); border-radius:10px; scroll-margin-top:16px;}
+.review-case.is-focused {border-color:#56a8b7; box-shadow:0 0 0 1px #56a8b755;}
+.review-case-head {display:flex; justify-content:space-between; align-items:start; gap:10px; margin-bottom:12px;}
+.review-case h3 {font-size:16px; line-height:1.6; margin:0;}
+.review-case h3 small {font-size:10px; font-weight:400; color:var(--muted); margin-left:7px;}
+.review-case .review-claim {font-size:12px; line-height:1.9; color:var(--text); margin:14px 0;}
+.review-case .review-result {display:block; font-size:24px; letter-spacing:.01em; margin:6px 0; font-variant-numeric:tabular-nums;}
+.review-case .review-result-label {font-size:10px; color:var(--muted);}
+.review-case .review-facts {display:grid; grid-template-columns:1fr 1fr; gap:9px 14px; padding:12px 0; margin:10px 0; border-top:1px solid var(--border); border-bottom:1px solid var(--border);}
+.review-case .review-facts span {font-size:10px; color:var(--muted); line-height:1.7;}
+.review-case .review-facts b {display:block; font-size:11px; color:var(--text-soft); font-weight:500;}
+.review-case .review-reason {font-size:11px; color:var(--text-soft); line-height:1.8;}
+.review-case details {border-top:1px solid var(--border); margin-top:14px; padding-top:12px; font-size:11px; color:var(--text-soft);}
+.review-case details summary {cursor:pointer; color:var(--cyan);}
+.review-case .review-source {padding:9px 0; font-size:11px; line-height:1.8; overflow-wrap:anywhere;}
+.review-source small {display:block; color:var(--muted); font-size:9px;}
+.review-case .review-variant {margin-top:13px; padding-top:10px; border-top:1px dashed var(--border-strong);}
+.review-variant p {font-size:11px; line-height:1.9;}
+.review-variant code {font-size:9px; color:var(--muted); overflow-wrap:anywhere;}
+.review-case .review-actions {display:flex; gap:12px; flex-wrap:wrap; margin-top:14px; font-size:11px;}
+.review-message {padding:14px; border:1px solid #6d5b35; border-radius:8px; color:#dfc38c; line-height:1.9; font-size:12px;}
+.review-empty {padding:24px; border:1px dashed var(--border-strong); color:var(--muted); grid-column:1/-1; line-height:1.9; font-size:12px;}
+.review-reference {margin-top:26px; padding:16px; border:1px solid var(--border); border-radius:8px; font-size:12px;}
+.review-reference summary {cursor:pointer; color:var(--text-soft);}
+.review-reference select {margin:12px;}
+.review-subheading {margin-top:32px;}
+.review-main table td {vertical-align:top; font-size:11px; line-height:1.8; white-space:normal; min-width:80px;}
+.review-main table td:first-child {min-width:160px;}
+.review-main table a {overflow-wrap:anywhere;}
+@media(max-width:1100px){.review-cards{grid-template-columns:1fr;}.review-intro h1{font-size:22px;}}
+@media(max-width:760px){.review-intro h1{font-size:20px;}.review-page .sidebar{display:grid;grid-template-columns:1fr 1fr;height:auto;}.review-page .sidebar-head,.review-page #reviewQuery,.review-page .sidebar-foot{grid-column:1/-1;}.review-case{padding:15px;}.review-main .metrics{grid-template-columns:1fr 1fr;}}
+
+.review-equity-filters {display:flex; flex-direction:column; gap:13px;}
+@media(max-width:760px){.review-equity-filters{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:9px;}.review-equity-filters > input,.review-equity-filters > label[for=reviewQuery]{grid-column:1/-1;}#reviewIndexFilter{grid-column:1/-1;}}

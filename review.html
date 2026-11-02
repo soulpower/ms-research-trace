@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0b1220"><title>大摩观点验证 · 事后表现</title><link rel="stylesheet" href="assets/markets.css?v=4d657b369c2d"><link rel="stylesheet" href="assets/review.css?v=7d2c90347497"><link rel="stylesheet" href="assets/workspace.css?v=c65fad3053d4"><script defer src="assets/workspace.js?v=4b4a3f834a64"></script><script defer src="assets/workspace-state.js?v=b38371bf1d19"></script><script defer src="assets/public-loader.js?v=fb8b42246f31"></script><script defer src="assets/price-context.js?v=0a7fa7146bbb"></script><script defer src="assets/review.js?v=7029d12f4091"></script><link rel="stylesheet" href="assets/price-context.css?v=0078094a9c2e"></head>
+<body class="review-page">
+<a class="skip-link" href="#mainContent">跳到主要内容</a>
+<header class="topbar">
+  <a class="brand" data-workspace-link="markets" href="index.html"><span class="brandmark" aria-hidden="true">摩</span><span>大摩研究观察<small>观点 · 行情 · 事后回看</small></span></a>
+  <nav class="workspace-nav" aria-label="研究工作区">
+    <a data-workspace-link="markets" href="index.html" ><span aria-hidden="true">01</span>观点汇总</a>
+    <a data-workspace-link="pre" href="pre.html" ><span aria-hidden="true">02</span>事前分析</a>
+    <a id="reviewLink" data-workspace-link="review" href="review.html" aria-current="page"><span aria-hidden="true">03</span>事后验证</a>
+    <a data-workspace-link="meetings" href="meeting-reports/index.html" ><span aria-hidden="true">04</span>会议摘要</a>
+  </nav>
+  <div class="header-right"><span class="snapshot-date" id="reviewFreshness">研究资料快照</span><a id="methodLink" href="#reviewMethod">使用说明</a><a id="legalLink" href="#legal-notice">免责声明</a></div>
+</header>
+
+<div id="reviewLoading" class="loading" role="status">正在载入观点验证与来源…</div><noscript><p class="loading">请启用JavaScript查看核验资料。</p></noscript>
+<div id="reviewApp" class="layout review-layout" hidden>
+<aside class="sidebar" aria-label="观点验证筛选">
+<div class="sidebar-head"><span class="eyebrow">核验清单</span><strong id="reviewPoolCount"></strong></div>
+<div class="filter-field" id="reviewMeasureField"><label for="reviewMeasure">比较内容</label><select id="reviewMeasure"><option value="direction">绝对涨跌方向</option><option value="relative">相对观察基准表现</option></select></div><div class="filter-field" id="reviewNeutralField"><label for="reviewNeutral">基本持平区间（百分点）</label><select id="reviewNeutral"><option value="0">0 · 保留原涨跌方向</option><option value="1">±1</option><option value="3">±3</option></select></div><div id="reviewEquityFilters" class="review-equity-filters">
+<div class="filter-field"><label for="reviewSector">行业</label><select id="reviewSector"><option value="">全部行业</option></select></div>
+<div class="filter-field"><label for="reviewAsset">公司</label><select id="reviewAsset"><option value="">全部A股公司</option></select></div>
+<label for="reviewQuery">搜索公司、观点或来源</label><input id="reviewQuery" type="search" placeholder="名称 / 代码 / 原观点 / 报告标题">
+<div class="filter-field"><label for="reviewOutcome">核验结果</label><select id="reviewOutcome"><option value="">全部结果</option><option value="yes">符合预期 / 方向符合</option><option value="no">不符合预期 / 方向相反</option><option value="pending">原期限尚未结束</option><option value="other">持平 / 无法判断</option></select></div>
+<div class="filter-field"><label for="reviewPhase">原定期限</label><select id="reviewPhase"><option value="">全部期限</option><option value="pending">尚未到截止日</option><option value="ended">已经到截止日</option></select></div>
+</div>
+<div class="filter-field" id="reviewIndexFilter" hidden><label for="reviewIndex">指数</label><select id="reviewIndex"><option value="">全部已核验指数</option></select></div>
+<button id="reviewReset" type="button" class="button secondary">重置筛选</button>
+<div class="sidebar-foot"><b id="reviewFacts"></b><p>同股、同日、同方向的重复说法合成一次核验。单纯提及与基本面事实不作涨跌评分。</p><p id="reviewAssetNote"></p></div>
+</aside>
+<main id="mainContent" class="review-main" tabindex="-1">
+<section class="workspace-intro review-intro"><span class="intro-step">03 / 实际表现</span><span class="eyebrow">RETROSPECTIVE REVIEW</span><h1>事后验证</h1><p>回到观点提出的时间，看实际走势是否符合预期。可以比较当前表现，也可以按原定期限核对。</p></section>
+<nav class="tabs" aria-label="验证范围"><button id="reviewTabEquity" type="button" aria-selected="true">A股逐条验证</button><button id="reviewTabIndex" type="button" aria-selected="false">指数验证</button><button id="reviewTabIndustry" type="button" aria-selected="false">行业回看</button><button id="reviewTabMacro" type="button" aria-selected="false">宏观回看</button></nav>
+<div id="reviewTimeControls" class="review-mode" role="group" aria-label="核验时间口径"><button id="reviewModeCurrent" type="button" aria-pressed="true">截至目前的表现</button><button id="reviewModeExpiry" type="button" aria-pressed="false">按原期限兑现</button></div>
+<p class="scope-note snapshot-note" id="snapshotNote"></p><p class="review-message" id="reviewQuality"></p><p id="reviewModeNote" class="scope-note"></p><section id="reviewEquity">
+<div id="reviewMetrics" class="metrics review-metrics" aria-live="polite"></div><p id="reviewTargets" class="scope-note"></p>
+<p id="reviewDeepNote" class="review-message" hidden></p><p id="reviewCount" class="muted" aria-live="polite"></p><div id="reviewCases" class="review-cards"></div><button id="reviewMore" class="button secondary" type="button" hidden>继续显示核验记录</button>
+</section>
+<section id="reviewIndexPanel" hidden><h2>指数观点与实际点位</h2><p class="chart-note">明确点位目标展示当前或到期误差；方向判断看实际涨跌。板块观点用指数作观察代理时单独注明，不当作对指数的正式评级。各指数使用自身真实交易日，不套用A股休市日。</p><div class="review-mode" role="group" aria-label="指数核验时间口径"><button id="reviewIndexCurrent" type="button" aria-pressed="true">截至目前的表现</button><button id="reviewIndexExpiry" type="button" aria-pressed="false">按原期限核对</button></div><div id="reviewIndexMetrics" class="metrics review-metrics" aria-live="polite"></div><p id="reviewIndexCount" class="muted" aria-live="polite"></p><div id="reviewIndexCases" class="review-cards"></div></section>
+<section id="reviewIndustry" hidden><h2>按A股公司所属行业汇总</h2><p class="chart-note">下表按当前行业、公司、搜索、结果与期限筛选分组；方向统计使用所选绝对或相对口径，目标价进度在逐条验证中单列。小样本的0%或100%不适合用来排名。</p><div class="table-scroll"><table><thead><tr><th>行业（点击筛选）</th><th>判断次数</th><th>当前方向符合 / 可比较</th><th>到期方向符合</th><th>到期方向相反</th><th>尚未到期</th></tr></thead><tbody id="reviewSectorRows"></tbody></table></div><details class="review-reference"><summary>行业主题参考指数的辅助回看（独立主题筛选）</summary><p class="chart-note">这里用登记的行业指数作观察代理，不把原行业观点改写成对指数的推荐；子行业、上市地和指数覆盖可能存在差异。</p><label>行业主题<select id="reviewTheme"><option value="">全部已核验主题</option></select></label><div id="reviewThemeCases" class="review-cards"></div></details></section>
+<section id="reviewMacro" hidden><label for="reviewMacroQuery">搜索宏观指标、观点或来源</label><input id="reviewMacroQuery" type="search" placeholder="GDP / 配置观点 / 来源标题"><h2>宏观经济数值：用实际经济数据核对</h2><p class="chart-note">GDP、物价、政策或盈利预测不能用股价涨跌代替验证。季度末即时估计和远期预测难度不同；同一年度预测的不同版本也不是独立样本。</p><div class="table-scroll"><table><thead><tr><th>观点日期 / 预测指标</th><th>预测</th><th>实际</th><th>误差（百分点）</th><th>状态与核验来源</th></tr></thead><tbody id="reviewEconomicRows"></tbody></table></div><h2 class="review-subheading">市场方向与相对配置</h2><p class="chart-note">A/H使用实际指数与人民币换算作观察代理。指数目标要看截止日期与实际点位误差，不能因为期间曾经过目标点位就算预测准确。</p><div id="reviewMacroCases" class="review-cards"></div></section>
+<section id="reviewMethod" class="compact-note"><details><summary>怎样看这张成绩单 <span>期限、计数与数据边界</span></summary><div id="reviewMethodText"></div><p>来源为已整理转述，保留原观点ID、资料日期依据和核验状态。来源标题可能是上传者标题，不代表摩根士丹利官方标题；发言人与会议日期未全部独立确认。</p><p>推荐/超配/低配不等于保证上涨。前复权与价格指数也不代表严格同口径总收益；这些比例不是可执行投资组合的收益或大摩机构整体认证。</p></details></section>
+<section id="legal-notice" class="compact-note"><details><summary>免责声明与版权说明 <span>仅供研究，非投资建议 · 展开全文</span></summary>
+    <div class="legal-heading"><h2 id="legal-title">免责声明与版权说明</h2><span>更新日期：2026年10月23日</span></div>
+    <p class="legal-summary"><strong>本站仅供个人学习、资料索引与研究交流，不构成投资建议或收益承诺。投资者应独立核实信息、自主决策并自行承担投资风险及损失。以下说明同样适用于本站提供下载的图表、表格与数据。</strong></p>
+    <div class="legal-grid">
+      <section>
+        <h3>一、非投资建议，风险由使用者自行判断</h3>
+        <p>股票池、历史观点、评级转述、价格及走势图均不构成本站或维护者对任何证券的买卖推荐、交易指令、投资邀约，亦不构成针对任何个人财务状况、投资目标或风险承受能力的建议。历史表现、机构观点及走势对照不代表未来收益，不存在保本、保收益或避免亏损的承诺。证券价格可能大幅波动，投资者可能损失部分或全部本金。</p>
+        <p>使用者应自行查证原始资料、了解产品风险并独立决策，不应将本站作为投资决策的唯一或主要依据；必要时应咨询具备相应资质的专业人士。因使用者自行作出的投资决策产生的盈亏、交易费用及其他后果，由使用者依法自行承担。</p>
+      </section>
+      <section>
+        <h3>二、第三方版权、来源与机构关系</h3>
+        <p>第三方报告、视频、摘要、行情数据、商标及其他材料的权利归相应权利人所有。本站主要提供来源索引、必要短摘与研究性转述；标明出处不代表取得原作品的全部复制、传播或商业使用授权，本声明也不能替代依法需要的许可。使用原始材料或再次传播、下载本站资料时，仍应遵守适用法律及相应权利人的使用要求。</p>
+        <p>本站为独立整理，与摩根士丹利、报告发布机构、数据服务商及视频上传者无隶属或代理关系，不表示相关主体对本站予以授权、认可、合作或背书。本站整理者的归纳不应被视为原作者原话或相关机构的正式观点。</p>
+      </section>
+      <section>
+        <h3>三、资料可能存在错误、遗漏或过时</h3>
+        <p>资料可能来自第三方公开摘要或转述，存在名称识别、日期推定、股别对应、观点归属及理解上的偏差。未核实的原始报告、推荐日期及视频正文均以页面标注为准。资料覆盖不完整，不保证已经收录某机构或节目全部观点；第三方结论也可能在发布后改变。</p>
+        <p>行情及图表为特定日期的数据快照，可能延迟、缺失、修订或存在复权口径差异，不是实时交易报价。本站不对资料的准确性、完整性、及时性、适用性、可持续访问或投资效果作出明示或默示保证；使用前应向原始来源或合法数据服务商核实。</p>
+      </section>
+      <section>
+        <h3>四、责任范围与第三方链接</h3>
+        <p>在适用法律允许的范围内，本站及维护者、内容整理者和技术贡献者，不对因访问、使用、无法使用或依赖本站内容、下载资料及第三方链接所产生的投资亏损、交易损失、机会损失、数据损失或其他损害承担责任。第三方网站及其内容、服务、交易和使用条款由相应主体负责，提供链接不构成对其内容或安全性的保证。</p>
+        <p><strong>本声明不排除或限制适用法律规定不得免除的责任，包括依法不得免责的故意、重大过失等责任。免责声明的效力及责任认定，以适用法律和具体事实为准；不能据此认为任何行为均已获得授权或当然免责。</strong></p>
+      </section>
+    </div>
+    <section class="legal-feedback">
+      <h3>五、版权异议与内容纠错</h3>
+      <p>如认为本站内容涉及您的合法权益，或发现错误、误引、来源失效等问题，请通过<a href="https://github.com/soulpower/ms-research-trace/issues/new" target="_blank" rel="noopener">仓库反馈入口</a>提供具体页面或材料链接、问题说明及必要的权属依据。请勿在公开反馈中提交身份证号、完整合同或其他敏感个人资料。维护者将核查并视情况更正、删除相关内容或断开链接。</p>
+    </section>
+  </details></section>
+<footer>独立资料整理 · 原观点与到期结论保留；当前行情只用于补充观察，不倒改历史结果。</footer>
+</main></div><p id="publicLoadStatus" class="scope-note" role="status" aria-live="polite"></p></body></html>
