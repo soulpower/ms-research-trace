@@ -57,9 +57,8 @@ function setRangeToFull(){
   $('rangeStart').value=first;$('rangeEnd').value=last;
 }
 function renderSelected(id,keepRange=false){
-  const canonical=resolveId(id);selected=DATA.entities.find(e=>e.id===canonical);if(!selected)return;
+  const canonical=resolveId(id),anchorId=keepRange&&selected?.id===canonical?$('anchor').value:'';selected=DATA.entities.find(e=>e.id===canonical);if(!selected)return;
   $('reviewLink').href=REVIEW_PAGE+(['A股','指数'].includes(selected.kind)?'?asset='+encodeURIComponent(canonical):'');
-  ResearchWorkspace.context(canonical);
   $('asset').value=canonical;viewsLimit=60;views=DATA.views.filter(v=>v.entity_id===canonical||(v.related_asset_ids||[]).includes(canonical)).sort((a,b)=>(b.view_date||'').localeCompare(a.view_date||'')||a.id.localeCompare(b.id));
   for(const b of document.querySelectorAll('[data-asset-id]'))b.setAttribute('aria-current',String(b.dataset.assetId===canonical));
   $('assetKind').textContent=[selected.kind,selected.subtype,selected.industry].filter(Boolean).join(' / ');
@@ -73,12 +72,14 @@ function renderSelected(id,keepRange=false){
   const currentDate=quote.latest_price_date||last?.[0];const unit=quote.unit||quote.currency||quote.quote_currency||'';
   $('priceLabel').textContent=selected.kind==='行业'?'参考指数最新历史点位':quote.kind==='指数'?'最新历史指数点位':quote.kind==='外汇'&&quote.subtype==='汇率指数'?'最新汇率指数点位':'最新历史收盘 / 报价';
   $('latest').textContent=current==null?'暂无行情':fmt(current);
-  $('latestDate').textContent=currentDate?`${currentDate} · ${unit}${quote.name?' · '+quote.name:''}${quote.formal_code?' · '+quote.formal_code:''}`:(quote.price_error||quote.price_note||selected.benchmark_note||'缺失数据不补造');
+  $('latestDate').textContent=currentDate?[currentDate,unit,quote.id!==selected.id?quote.name:''].filter(Boolean).join(' · '):(quote.price_error||quote.price_note||selected.benchmark_note||'缺失数据不补造');
   const viewDates=views.map(v=>v.view_date).filter(Boolean).sort();$('firstView').textContent=viewDates[0]||selected.first_view||'暂无核对观点';$('lastView').textContent=viewDates.at(-1)||selected.last_view||'—';
   $('viewTotal').textContent=`${views.length} 条观点与线索`;
   $('assetCoverage').textContent=`涉及文稿 ${selected.mention_videos||0} 期；按关联观点唯一ID统计提及 ${selected.mention_count||views.length} 次。${selected.kind==='行业'&&selected.aliases?.length?`已归并 ${selected.aliases.length} 个原始行业标签，可用原标签搜索。`:''}观点按唯一ID计数，提及不等于推荐。`;
   $('anchor').replaceChildren();option($('anchor'),'','全部可用历史');
   for(const v of views)option($('anchor'),v.id,`${v.view_date||'日期待核'} · ${v.source_type==='video'?'文稿':v.source_subtype==='local_pdf'?'研报PDF':'公开摘要'} · ${toneFor(v)}`);
+  $('anchor').value=views.some(v=>v.id===anchorId)?anchorId:'';
+  ResearchWorkspace.context(canonical,$('anchor').value||null);
   chartContext='';$('mode').value=priceAsset(selected).qfq_bars?.length?'qfq':'raw';$('mode').querySelector('[value="qfq"]').disabled=!priceAsset(selected).qfq_bars?.length;$('mode').querySelector('[value="adjusted"]').disabled=!pairRows(priceAsset(selected).adjusted_prices).length;
   $('sourceType').value='';$('tone').value='';$('attribution').value='';
   if(!keepRange)setRangeToFull();else {const x=allPrices(selected);$('rangeStart').value=$('rangeStart').value||x[0]?.[0]||'2025-01-01';$('rangeEnd').value=$('rangeEnd').value||x.at(-1)?.[0]||$('rangeStart').value}
@@ -137,17 +138,19 @@ function chartSeries(mode) {
 }
 function applyObservationAnchor() {
   const view = selectedView();
+  ResearchWorkspace.context(selected.id,view?.id||null);
   if (!view?.view_date) return;
   const after = $('observationBasis').value !== 'same';
   const first = allPrices(selected).find(row => after ? row[0] > view.view_date : row[0] >= view.view_date);
   $('rangeStart').value = first?.[0] || view.view_date;
-  ResearchWorkspace.context(selected.id, view.id);
+  if ($('rangeEnd').value < $('rangeStart').value) $('rangeEnd').value = $('rangeEnd').max;
 }
 function rawValueOnDate(day){const rows=allPrices(selected);let found=rows.find(r=>r[0]===day);if(found)return found[1];for(let i=rows.length-1;i>=0;i--)if(rows[i][0]<=day)return rows[i][1];return null}
 function drawLine(){
   if(!selected)return;resetPointState();renderChange();const chart=$('chart');chart.replaceChildren();chartPoints=[];chartUi=null;
   const mode=$('mode').value,rows=chartSeries(mode),view=selectedView(),quote=priceAsset(selected),unit=quote.unit||quote.currency||quote.quote_currency||'';
-  $('anchorNote').textContent=view?`观点参考日 ${view.view_date||'待核'}；${$('observationBasis').value==='same'?'资料观察：参考日当日或之后首个实际收盘':'发表后表现：严格在参考日之后的首个实际收盘，与事后验证起点一致'}。实际起点 ${rows[0]?.[0]||'暂无行情'}；不代表可交易执行价。`:'按上方手动日期区间显示。最新历史报价始终独立于观察区间。';
+  renderAnchorView(view);
+  $('anchorNote').textContent=view&&!view.view_date?'该观点日期待核，行情沿用当前日期区间。':view?`观点参考日 ${view.view_date}；${$('observationBasis').value==='same'?'资料观察：参考日当日或之后首个实际收盘':'发表后表现：严格在参考日之后的首个实际收盘，与事后验证起点一致'}。实际起点 ${rows[0]?.[0]||'暂无行情'}；不代表可交易执行价。`:'按下方日期区间显示。最新历史报价始终独立于观察区间。';
   $('priceNote').replaceChildren();$('priceNote').append(node('span',`${selected.kind==='行业'?`行业主题“${selected.name}”的观察基准，不代表原文推荐该指数。${selected.benchmark_note||''} `:''}${quote.price_note||selected.price_note||'行情来自已登记的直接报价序列。'} 单位：${unit||'待核'}；品种/代码：${quote.instrument||quote.formal_code||'无直接报价'}。${quote.price_quote_name?'行情品种名称：'+quote.price_quote_name+'。':''}${quote.price_provider?'行情来源：'+quote.price_provider+'。':''}${quote.price_retrieved_at?(quote.price_provider==='derived'?'计算时间：':'抓取时间：')+quote.price_retrieved_at+' UTC。':''}${quote.price_retrieval_time_note?'时间说明：'+quote.price_retrieval_time_note+'。':''}${quote.price_error?'最近刷新情况：'+quote.price_error+'。':''}${quote.price_history_note?'历史覆盖说明：'+quote.price_history_note:''}`));
   if(quote.qfq_error)$('priceNote').append(node('span',' 前复权刷新情况：'+quote.qfq_error+'。'));if(quote.qfq_basis)$('priceNote').append(node('span',' 前复权口径：'+quote.qfq_basis+'。'));if(quote.detail_error)$('priceNote').append(node('span',' 日K细节刷新：'+quote.detail_error+'。'));
   if(quote.amount_precision_note)$('priceNote').append(node('span',' 成交额：'+quote.amount_precision_note));
@@ -232,9 +235,7 @@ function handleChartWheel(ev){
   if(!chartWindow)return;ev.preventDefault();
   const dx=Number(ev.deltaX)||0,dy=Number(ev.deltaY)||0;
   if(!dx&&!dy)return;
-  // Browsers share wheel events for mice and trackpads. Provide an explicit vertical
-  // scroll mode rather than guessing hardware; horizontal gestures always pan.
-  if(dy&&(ev.ctrlKey||($('wheelAction').value!=='pan'&&Math.abs(dy)>=Math.abs(dx)))){zoomChart(dy>0?1.2:1/1.2,(chartX(ev)-88)/848);return;}
+  if(dy&&(ev.ctrlKey||Math.abs(dy)>=Math.abs(dx))){zoomChart(dy>0?1.2:1/1.2,(chartX(ev)-88)/848);return;}
   const width=$('chart').getBoundingClientRect().width*848/1000;
   const delta=Math.abs(ev.deltaX||0)>Math.abs(ev.deltaY||0)?ev.deltaX:ev.deltaY||0;
   const pixels=delta*(ev.deltaMode===1?16:ev.deltaMode===2?width:1);
@@ -273,8 +274,6 @@ function setupChartInteraction(){
     else if(ev.key==='ArrowRight'||ev.key==='ArrowLeft'){ev.preventDefault();const i=Math.max(0,Math.min(chartPoints.length-1,(hoverIndex<0?0:hoverIndex)+(ev.key==='ArrowRight'?1:-1)));showPoint(i)}
     else if(ev.key==='Escape'){resetPointState()}
   });
-  $('zoomIn').onclick=()=>zoomChart(1/1.2);$('zoomOut').onclick=()=>zoomChart(1.2);
-  $('resetZoom').onclick=()=>{if(chartWindow){chartWindow=boundedWindow(0,candleRows.length,candleRows.length);renderCandles()}};
 }
 
 function setTab(name){currentTab=name;for(const b of document.querySelectorAll('[data-tab]')){const active=b.dataset.tab===name;b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1;$('panel-'+b.dataset.tab).hidden=!active}}
@@ -282,7 +281,31 @@ function sourceBlock(s,compact){
   const div=node('div',null,compact?'source-link':'source-item');div.append(node('span',s.kind||'来源','source-kind'),safeLink((s.title||'来源资料')+' ↗',s.url));
   const meeting=ResearchWorkspace.meetingHref(s,selected.id);if(meeting){const a=node('a','阅读会议摘要 ↗');a.href=meeting;div.append(a)}
   if(s.local_pdf&&location.protocol!=='file:')div.append(node('small','本机PDF未随静态站发布；保留标题与页码。'));
-  div.append(node('p','资料日期：'+(s.date||'待核')+(s.page_start?' · PDF第'+s.page_start+(s.page_end!==s.page_start?'—'+s.page_end:'')+'页':''),'source-dates'));return div;
+  div.append(node('p','资料日期：'+(s.date||'待核')+(s.page_start?' · PDF第'+s.page_start+(s.page_end&&s.page_end!==s.page_start?'—'+s.page_end:'')+'页':'')+(s.timestamp_label?' · '+s.timestamp_label:''),'source-dates'));return div;
+}
+function opinionBadges(v){
+  const tone=toneFor(v),labels=node('div',null,'opinion-badges');
+  labels.append(badge(tone,toneClass(tone)),badge(v.evidence_label||'来源口径待核',v.source_type==='video'?'source-video':'source-report'));
+  return labels;
+}
+function opinionTarget(v){
+  if(!v.target_text&&v.target_value==null&&!v.target_range)return null;
+  const target=v.target_text||(v.target_range?v.target_range.join('–'):fmt(v.target_value));
+  return node('p',`预测目标：${target}；期限：${v.target_horizon||'未在选段确认'}`);
+}
+function renderAnchorView(v){
+  const preview=$('anchorView');preview.replaceChildren();preview.hidden=!v;
+  if(!v)return;
+  const header=node('div',null,'anchor-view-heading'),labels=opinionBadges(v);
+  if(v.attribution)labels.append(badge(v.attribution,'subtle'));
+  header.append(node('strong',v.view_date||'日期待核'),labels);
+  preview.append(header,node('p',v.summary||'观点转述待核','anchor-claim'));
+  const target=opinionTarget(v);if(target)preview.append(target);
+  if(v.scope)preview.append(node('p',v.scope,'anchor-scope'));
+  if(v.reason_analysis)preview.append(node('p','观点依据（归纳）：'+v.reason_analysis,'anchor-scope'));
+  if(v.evidence_segment_indices?.length)preview.append(node('p','文稿证据段：'+v.evidence_segment_indices.join('、'),'anchor-scope'));
+  if(v.sources?.length)for(const source of v.sources)preview.append(sourceBlock(source,true));
+  else preview.append(node('p','暂无引用来源记录','anchor-scope'));
 }
 function renderViews(){
   const source=$('sourceType').value,tone=$('tone').value,attribution=$('attribution')?.value||'';
@@ -294,14 +317,14 @@ function renderViews(){
   for(const v of list.slice(0,viewsLimit)){
     const a=node('article',null,'opinion'+(v.id===$('anchor').value?' selected':''));a.id='view-'+v.id;const heading=node('div',null,'opinion-heading');
     const date=node('div',v.view_date||'日期待核','opinion-date');date.append(node('small',v.date_basis||'参考日期口径待核'));
-    const labels=node('div',null,'opinion-badges');labels.append(badge(toneFor(v),toneClass(toneFor(v))),badge(v.evidence_label||'来源口径待核',v.source_type==='video'?'source-video':'source-report'));
+    const labels=opinionBadges(v);
     if(v.source_revision_status)labels.append(badge(v.source_revision_status,v.source_revision_status==='新版转写待复核'?'tone-pending':'subtle'));
     if(v.source_revision_change&&v.source_revision_change!=='保留')labels.append(badge(v.source_revision_change,v.source_revision_change==='修正'?'tone-conditional':v.source_revision_change==='新增'?'source-video':'tone-pending'));
     if(v.merged_legacy_count)labels.append(badge(`合并 ${v.merged_legacy_count} 条旧观点`,'subtle'));
     if(v.mapping_status==='待核'||v.mapping_status==='可报价身份待核')labels.append(badge('标的身份待核','tone-pending'));
     else if(v.share_scope&&v.share_scope!=='不适用'&&v.share_class_verified===false)labels.append(badge('股别待核','tone-pending'));
     heading.append(date,labels);a.append(heading,node('p',v.summary||'观点转述待核'));
-    if(v.target_text||v.target_value!=null||v.target_range)a.append(node('p','预测目标：'+(v.target_text||(v.target_range?v.target_range.join('–'):fmt(v.target_value)))+'；期限：'+(v.target_horizon||'未在选段确认')));
+    const target=opinionTarget(v);if(target)a.append(target);
     a.append(node('p',v.scope||'观点归属与适用范围待核','opinion-scope'));
     for(const s of v.sources||[])a.append(sourceBlock(s,true));
     const detail=node('details');detail.append(node('summary','来源口径、标的归并与适用限制'));
@@ -357,9 +380,8 @@ function draw(){
   if($('chartStyle').value!=='candles'||mode==='normalized'||mode==='adjusted'||!candleRows.length){
     chartWindow=null;
     if($('chartStyle').value==='candles')$('chartStatus').textContent+=mode==='normalized'||mode==='adjusted'?' 当前口径采用收盘线展示。':' 当前没有该口径完整OHLC，显示真实收盘线。';
-    for(const id of ['zoomIn','zoomOut','resetZoom'])$(id).disabled=true;return;
+    return;
   }
-  for(const id of ['zoomIn','zoomOut','resetZoom'])$(id).disabled=false;
   if(!chartWindow)chartWindow=boundedWindow(Math.max(0,candleRows.length-100),100,candleRows.length);
   renderCandles();
 }
@@ -376,7 +398,7 @@ function renderCandles(){
   chart.append(svg('text',{x:88,y:222,fill:'#9aafc3','font-size':10},useAmount?`成交额 · ${quote.amount_unit||quote.currency||'供应商单位'}`:hasVolume?`成交量 · ${quote.volume_unit||'供应商单位'}`:'成交量额缺失'));
   for(const i of [...new Set([0,Math.floor((bars.length-1)/2),bars.length-1])])chart.append(svg('text',{x:x(i),y:291,'text-anchor':i===0?'start':i===bars.length-1?'end':'middle',fill:'#9aafc3','font-size':11},bars[i][0]));
   const line=svg('line',{x1:0,x2:0,y1:24,y2:272,stroke:'#a5bbd1','stroke-dasharray':'4 3',visibility:'hidden','pointer-events':'none'}),dot=svg('circle',{cx:0,cy:0,r:4,fill:'#e7b46a',visibility:'hidden','pointer-events':'none'});chart.append(line,dot);chartUi=addCrosshair(chart,line,dot,{top:28,bottom:203,min:lo,max:hi});
-  $('chartStatus').textContent=`显示 ${bars.length} / ${candleRows.length} 个真实日K · ${bars[0][0]} 至 ${bars.at(-1)[0]} · ${mode==='qfq'?'前复权':'不复权'} · ${quote.name} ${quote.formal_code||quote.instrument||''}。${useAmount?'':'成交额未取得，未用估算值填充。'}滚轮模式可切换缩放或平移，双指横滑/左右拖动平移，＋/−缩放；区间涨跌幅仍按上方日期范围计算。${mode==='raw'&&['A股','港股'].includes(quote.kind)?'前复权尚缺，当前回退不复权。':''}`;
+  $('chartStatus').textContent=`显示 ${bars.length} / ${candleRows.length} 个真实日K · ${bars[0][0]} 至 ${bars.at(-1)[0]} · ${mode==='qfq'?'前复权':'不复权'} · ${quote.name} ${quote.formal_code||quote.instrument||''}。${useAmount?'':'成交额未取得，未用估算值填充。'}区间涨跌幅按上方日期范围计算。${mode==='raw'&&['A股','港股'].includes(quote.kind)?'前复权尚缺，当前回退不复权。':''}`;
 }
 async function refreshSelectedMarket(){
   const asset=priceAsset(selected),identity=asset.id,code=String(asset.formal_code||asset.code||'');let secid=null;
@@ -433,7 +455,7 @@ function rememberMarketPage(){
       const values=state.controls||{},extra=state.extra||{};
       ResearchWorkspace.applyControls(values,['query','kind','coverage']);
       filter(resolveId(extra.selected||values.asset||''));
-      ResearchWorkspace.applyControls(values,['anchor','observationBasis','rangeStart','rangeEnd','mode','chartStyle','wheelAction','sourceType','tone','attribution','order']);
+      ResearchWorkspace.applyControls(values,['anchor','observationBasis','rangeStart','rangeEnd','mode','chartStyle','sourceType','tone','attribution','order']);
       viewsLimit=Math.max(60,Math.min(DATA.views.length,Number(extra.viewsLimit)||60));
       renderViews();draw();
       if(extra.chartWindow&&candleRows.length&&chartWindow){chartWindow=boundedWindow(extra.chartWindow.start,extra.chartWindow.count,candleRows.length);renderCandles()}
@@ -453,9 +475,9 @@ async function init(){
     for(const kind of [...new Set(DATA.entities.map(e=>e.kind))].sort())option($('kind'),kind,kind);
     $('query').oninput=()=>filter();$('kind').onchange=()=>filter();$('coverage').onchange=()=>filter();$('asset').onchange=()=>select($('asset').value);
     $('resetAssets').onclick=()=>{for(const id of ['query','kind','coverage'])$(id).value='';filter()};
-    $('anchor').onchange=()=>{applyObservationAnchor();renderViews();draw()};
+    $('anchor').onchange=()=>{if(!$('anchor').value)setRangeToFull();applyObservationAnchor();renderViews();draw()};
     $('observationBasis').onchange=()=>{applyObservationAnchor();draw()};
-    $('rangeStart').onchange=()=>{$('anchor').value='';renderViews();draw()};$('rangeEnd').onchange=draw;$('resetRange').onclick=()=>{$('anchor').value='';setRangeToFull();renderViews();draw()};
+    $('rangeStart').onchange=()=>{$('anchor').value='';applyObservationAnchor();renderViews();draw()};$('rangeEnd').onchange=draw;$('resetRange').onclick=()=>{$('anchor').value='';$('anchor').onchange()};
     $('mode').onchange=draw;for(const id of ['sourceType','tone','attribution','order'])$(id).onchange=()=>{viewsLimit=60;renderViews()};$('loadMoreViews').onclick=()=>{viewsLimit+=60;renderViews()};
 
     const tabs=[...document.querySelectorAll('[data-tab]')];for(const b of tabs){b.onclick=()=>setTab(b.dataset.tab);b.onkeydown=e=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(e.key))return;e.preventDefault();const i=tabs.indexOf(b);const next=tabs[e.key==='Home'?0:e.key==='End'?tabs.length-1:(i+(e.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length];setTab(next.dataset.tab);next.focus()}}
