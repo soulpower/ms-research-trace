@@ -46,6 +46,38 @@ function chart(r){
   wrap.append(svg,node('p',`阴影：所选 ${$('window').value} 交易日窗口 ${window.start||'行情不足'} → ${window.end||'—'}。虚线：参考日 ${r.date}，非交易日位于相邻观测之间；鼠标停留在点上查看真实日期和价格。`,'chart-note'));
   return wrap;
 }
+function eventDetails(r){
+  const detail=node('details'),body=node('div');
+  detail.append(node('summary','走势、原观点与全部来源'),body);
+  let loading=false,loaded=false;
+  detail.addEventListener('toggle',async ()=>{
+    if(!detail.open||loaded||loading)return;
+    loading=true;
+    try{
+      let full=r;
+      if(r.detail_file){
+        body.textContent='正在加载走势与来源…';
+        const data=await ResearchPublic.json(r.detail_file);
+        if(!data[r.id])throw Error('事件明细校验失败');
+        full={...r,...data[r.id]};
+      }
+      renderEventDetails(body,full);
+      loaded=true;
+    }catch(e){body.textContent='载入失败：'+e.message+'。收起后重新展开可重试。';}
+    finally{loading=false;}
+  });
+  return detail;
+}
+function renderEventDetails(detail,r){
+  detail.replaceChildren(chart(r));
+  for(const v of r.views)detail.append(node('p',v.summary),node('small',`${v.id} · ${v.date_basis||'日期依据待核'} · ${v.attribution||'归属待核'}`));
+  for(const source of r.sources){
+    if(source.url?.startsWith('https://')){const link=node('a',source.title||source.id);link.href=source.url;link.target='_blank';link.rel='noreferrer';detail.append(link,node('br'))}
+    else detail.append(node('p',(source.title||source.filename||source.id)+' · 原始资料不随公开版发布'));
+    const meeting=ResearchWorkspace.meetingHref(source,r.entity_id);
+    if(meeting){const link=node('a','阅读会议摘要 ↗');link.href=meeting;detail.append(link,node('br'))}
+  }
+}
 function card(r){
   const a=node('article',null,'review-case'+(contextView&&r.views.some(v=>v.id===contextView)?' is-focused':'')),head=node('div',null,'review-case-head'),labels=node('div',null,'pre-labels');
   a.id='pre-'+r.id;
@@ -60,14 +92,7 @@ function card(r){
   if(w.excess_pct!=null)a.append(node('p',`观察基准 ${r.benchmark.name} ${r.benchmark.code||r.benchmark.id}：${pct(w.benchmark_return_pct)}；相对差值 ${Number(w.excess_pct).toFixed(2)} 个百分点。`,'review-reason'));
   const later=r.future_start;
   a.append(node('p',r.future_end?`观点后20交易日：${later.date} ${ResearchWorkspace.displayPrice(later.price)} → ${r.future_end.date} ${ResearchWorkspace.displayPrice(r.future_end.price)} ${unit} · ${pct(r.future_return_pct)}`:`观点后20交易日未完整${later?'；已见起点 '+later.date+' · '+ResearchWorkspace.displayPrice(later.price)+' '+unit:'或行情不足'}。`,'review-reason'));
-  const detail=node('details');detail.append(node('summary','走势、原观点与全部来源'),chart(r));
-  for(const v of r.views)detail.append(node('p',v.summary),node('small',`${v.id} · ${v.date_basis||'日期依据待核'} · ${v.attribution||'归属待核'}`));
-  for(const source of r.sources){
-    if(source.url?.startsWith('https://')){const link=node('a',source.title||source.id);link.href=source.url;link.target='_blank';link.rel='noreferrer';detail.append(link,node('br'))}
-    else detail.append(node('p',(source.title||source.filename||source.id)+' · 原始资料不随公开版发布'));
-    const meeting=ResearchWorkspace.meetingHref(source,r.entity_id);
-    if(meeting){const link=node('a','阅读会议摘要 ↗');link.href=meeting;detail.append(link,node('br'))}
-  }
+  const detail=eventDetails(r);
   if(r.review_expiry)a.append(node('p',`原综合核验（含目标要求）${r.deadline||'待核'}：${r.review_expiry.state}；截至当前：${r.review_current?.state||'暂无'}。`,'review-reason'));
   if(r.price_source){const link=node('a','实际行情来源 ↗');link.href=r.price_source;link.target='_blank';link.rel='noreferrer';detail.append(link)}
   a.append(detail);
@@ -112,7 +137,7 @@ function rememberPrePage(){
 }
 async function init(){
   try{
-    const r=await fetch('assets/pre.json?v=7cd9ab9a956a');if(!r.ok)throw Error(r.status);PRE=await r.json();
+    const r=await fetch('assets/pre.json?v=fda3b869ea5b');if(!r.ok)throw Error(r.status);PRE=await r.json();
     $('preFreshness').textContent='行情快照 '+PRE.price_cutoff;$('snapshotNote').textContent=ResearchWorkspace.snapshotNote(PRE.price_cutoff);
     $('coverage').textContent=`本页纳入 ${PRE.scope.reviewed_events} 次已审阅方向事件，以及 ${PRE.scope.candidate_events} 次待复核措辞候选；另有 ${PRE.scope.unscored_views} 条观点保留未评分原因。已审阅事件中仅 ${PRE.scope.verified_date_events} 次日期已核验，其余按参考日观察，上传延迟可能造成假性滞后。`;
     const params=ResearchWorkspace.params(),view=params.get('view'),found=PRE.rows.find(r=>r.views.some(v=>v.id===view));
@@ -125,7 +150,19 @@ async function init(){
     if(found&&!found.audited)$('evidence').value='all';
     for(const x of [...new Set(PRE.rows.map(r=>r.sector))].sort())$('sector').append(new Option(x,x));
     options();
-    if(view&&!found){const reason=PRE.excluded.find(r=>r.id===view);$('preContextNote').textContent='当前原观点未形成可用的事前方向事件：'+(reason?.reason||'尚未审阅为方向判断')+'。可在观点汇总中继续查看原资料。'}
+    if(view&&!found){
+      const note=$('preContextNote');
+      const fallback='当前原观点未形成可用的事前方向事件。可在观点汇总中继续查看原资料。';
+      const showReason=rows=>{
+        const reason=rows.find(r=>r.id===view)?.reason;
+        if(reason)note.textContent='当前原观点未形成可用的事前方向事件：'+reason+'。可在观点汇总中继续查看原资料。';
+      };
+      note.textContent=fallback;
+      if(PRE.excluded)showReason(PRE.excluded);
+      else if(PRE.excluded_file)ResearchPublic.json(PRE.excluded_file).then(rows=>{
+        if(contextView===view&&note.textContent===fallback)showReason(rows);
+      }).catch(()=>{});
+    }
     for(const id of controls)$(id).addEventListener(id==='query'?'input':'change',()=>{limit=24;contextView='';$('preContextNote').textContent='';if(['kind','sector','evidence'].includes(id)){requestedAsset='';options()}render()});
     $('reset').onclick=()=>{for(const id of controls)$(id).value=({window:'40',evidence:'reviewed',threshold:'3'}[id]||'');requestedAsset='';contextView='';$('preContextNote').textContent='';limit=24;options();render()};
     $('more').onclick=()=>{limit+=24;render()};$('method').replaceChildren(...PRE.method.map(t=>node('p',t)));

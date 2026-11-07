@@ -1,5 +1,6 @@
 /* Market-specific styles. Shared shell and controls: workspace.css. */
 #asset { display: none; }
+#publicLoadStatus:empty { display: none; }
 .asset-list { flex: 1; min-height: 100px; overflow-y: auto; margin: 0 -7px; padding: 0 7px; }
 .asset-button { display: block; width: 100%; margin: 3px 0; padding: 10px 11px; border: 1px solid transparent; border-radius: 7px; background: transparent; color: var(--text-soft); text-align: left; }
 .asset-button:hover { background: #102235; }

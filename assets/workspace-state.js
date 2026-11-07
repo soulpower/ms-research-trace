@@ -98,8 +98,10 @@ Object.assign(ResearchWorkspace, (() => {
     const reload=window.performance?.getEntriesByType('navigation')[0]?.type==='reload';
     const state=cache.pages[name],resume=new URL(location.href).searchParams.get('_resume')==='1';
     if(state&&(resume||(reload&&state.route===route()))&&safeRoute(state.route)){
-      if(config.restore)config.restore(state);else applyControls(state.controls);
-      restoreGeometry(state);return true;
+      const restored=config.restore?config.restore(state):applyControls(state.controls);
+      if(restored?.then)restored.then(()=>restoreGeometry(state)).catch(e=>console.error(e));
+      else restoreGeometry(state);
+      return true;
     }
     save();return false;
   }
