@@ -295,6 +295,9 @@ function renderViews(){
     const a=node('article',null,'opinion'+(v.id===$('anchor').value?' selected':''));a.id='view-'+v.id;const heading=node('div',null,'opinion-heading');
     const date=node('div',v.view_date||'日期待核','opinion-date');date.append(node('small',v.date_basis||'参考日期口径待核'));
     const labels=node('div',null,'opinion-badges');labels.append(badge(toneFor(v),toneClass(toneFor(v))),badge(v.evidence_label||'来源口径待核',v.source_type==='video'?'source-video':'source-report'));
+    if(v.source_revision_status)labels.append(badge(v.source_revision_status,v.source_revision_status==='新版转写待复核'?'tone-pending':'subtle'));
+    if(v.source_revision_change&&v.source_revision_change!=='保留')labels.append(badge(v.source_revision_change,v.source_revision_change==='修正'?'tone-conditional':v.source_revision_change==='新增'?'source-video':'tone-pending'));
+    if(v.merged_legacy_count)labels.append(badge(`合并 ${v.merged_legacy_count} 条旧观点`,'subtle'));
     if(v.mapping_status==='待核'||v.mapping_status==='可报价身份待核')labels.append(badge('标的身份待核','tone-pending'));
     else if(v.share_scope&&v.share_scope!=='不适用'&&v.share_class_verified===false)labels.append(badge('股别待核','tone-pending'));
     heading.append(date,labels);a.append(heading,node('p',v.summary||'观点转述待核'));
@@ -323,14 +326,15 @@ function renderSources(){
   for(const s of [...unique.values()].sort((a,b)=>(b.date||'').localeCompare(a.date||'')))$('sources').append(sourceBlock(s,false));
 }
 function viewsCsvRows(data) {
-  const fields = ['观点ID','规范标的','规范标的ID','来源标的名称','来源标的ID','原始类别','归并方式','原始行业标签','参考日期','来源类别','观点归属','观点类型','态度标签','原始态度','置信度','观点转述','原因归纳','目标/期限','日期口径','股别/适用范围','证据状态','限制','来源标题','来源链接'];
-  return [fields, ...data.views.map(v => [v.id,v.entity_name,v.entity_id,v.source_entity_name,v.source_entity_id,v.source_asset_kind||v.asset_kind,v.mapping_method,v.source_subtopic,v.view_date,v.source_type==='video'?'会议文稿分析':v.source_subtype==='local_pdf'?'研报PDF':'第三方摘要',v.attribution||'第三方摘要',v.claim_type,v.tone||'待核',v.stance,v.confidence,v.summary,v.reason_analysis||v.reason_evidence,v.target_text||v.target_horizon,v.date_basis,v.scope,v.evidence_label,Array.isArray(v.limitations)?v.limitations.join('；'):v.limitations||'',(v.sources||[]).map(s=>s.title).join('\n'),(v.sources||[]).map(s=>s.url).join('\n')])];
+  const fields = ['观点ID','规范标的','规范标的ID','来源标的名称','来源标的ID','原始类别','归并方式','原始行业标签','参考日期','来源类别','观点归属','观点类型','态度标签','原始态度','置信度','观点转述','原因归纳','目标/期限','日期口径','股别/适用范围','证据状态','新版转写复核状态','本次复核结论','合并旧观点数','限制','来源标题','来源链接'];
+  return [fields, ...data.views.map(v => [v.id,v.entity_name,v.entity_id,v.source_entity_name,v.source_entity_id,v.source_asset_kind||v.asset_kind,v.mapping_method,v.source_subtopic,v.view_date,v.source_type==='video'?'会议文稿分析':v.source_subtype==='local_pdf'?'研报PDF':'第三方摘要',v.attribution||'第三方摘要',v.claim_type,v.tone||'待核',v.stance,v.confidence,v.summary,v.reason_analysis||v.reason_evidence,v.target_text||v.target_horizon,v.date_basis,v.scope,v.evidence_label,v.source_revision_status||'',v.source_revision_change||'',v.merged_legacy_count||'',Array.isArray(v.limitations)?v.limitations.join('；'):v.limitations||'',(v.sources||[]).map(s=>s.title).join('\n'),(v.sources||[]).map(s=>s.url).join('\n')])];
 }
 function csvDownload(name,rows){const csv='\ufeff'+rows.map(r=>r.map(x=>'"'+String(x??'').replaceAll('"','""')+'"').join(',')).join('\r\n');const a=node('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
 function datasetFactsText(){const total=DATA.transcript_coverage?.total;return `${Number.isInteger(total)?total+' 份会议文稿':'会议文稿'} · ${DATA.video_views||0} 条会议观点 · ${DATA.report_views||0} 条研报/摘要`}
 function updateMethodText(){
   $('methodViewFacts').textContent=`合计 ${DATA.unique_view_count||0} 条唯一观点：文稿 ${DATA.video_views||0} 条，研报PDF ${DATA.pdf_views||0} 条，公开摘要 ${DATA.public_summary_views||0} 条。提及次数按每个标的关联的唯一观点ID统计。`;
   const coverage=DATA.transcript_coverage;if(coverage)$('methodViewFacts').textContent+=`文稿库共 ${coverage.total} 份（${Object.entries(coverage.by_channel).map(([name,count])=>name+' '+count+' 份').join('、')}），其中 ${coverage.with_linked_opinions} 份已关联结构化观点，${coverage.without_linked_opinions} 份暂无关联观点。份数不等同独立会议场次或全文分析完成数；历史首批深度分析 ${DATA.deep_analysis?.reviewed_transcripts||0} 份仅是早期批次。`;
+  const revision=DATA.source_revision_coverage;if(revision?.total_videos){$('methodViewFacts').textContent+=`新版转写逐期复核（${revision.batch}）：已复核 ${revision.reviewed_videos}/${revision.total_videos} 期。`;$('methodViewFacts').textContent+=revision.pending_videos?`${revision.pending_videos} 期观点仍按旧版整理显示并标注待复核。`:'本批无待复核期数。';const reconciliation=revision.old_view_reconciliation;if(reconciliation){$('methodViewFacts').textContent+=`旧观点ID核对 ${reconciliation.legacy_ids_covered}/${reconciliation.baseline_old_view_ids} 条；合并去重 ${reconciliation.duplicate_cards_removed_by_merge} 条。`;const itb=reconciliation.itb_ar_supplemental_39;if(itb?.old_ids_reviewed)$('methodViewFacts').textContent+=`ItbArSVYfiQ另核对 ${itb.old_ids_reviewed} 条旧观点：${itb.merged_old_ids} 条归入 ${itb.canonical_new_views} 条新版观点，${itb.independent_old_views_retained} 条独立保留。`;}const carried=revision.retained_review_rows_without_baseline_id?.count||0;if(carried)$('methodViewFacts').textContent+=`另保留 ${carried} 条前批复核观点，旧网页基线无对应ID，不计为新增。`;}
   const first=DATA.price_range_start||'未取得',last=DATA.price_cutoff||'暂无历史数据';$('methodPriceRange').textContent=`已取得日行情范围为 ${first} 至 ${last}；日K展示实际日行情；收盘线按周采样并保留区间端点，区间变化与归一图共用同一基础序列。最新价使用各标的最新完成交易日。`;
 }
 function dailyBars(asset,mode='raw'){
@@ -380,6 +384,7 @@ async function refreshSelectedMarket(){
   if(asset.kind==='港股'&&/^\d{5}$/.test(code))secid='116.'+code;
   const liveIndexes={'index:SSE':'1.000001','index:CSI300':'1.000300','index:SSE50':'1.000016','index:CSI1000':'1.000852','index:SZSE':'0.399001','index:CHINEXT':'0.399006','index:CSI_BANK':'0.399986'};
   if(liveIndexes[asset.id])secid=liveIndexes[asset.id];
+  if(/停牌/.test(asset.market_status||'')){$('marketRefreshStatus').textContent=`${asset.name}当前处于停牌状态，在线报价刷新已跳过；显示最近实际交易日数据。`;return}
   if(!secid||secid.startsWith('null')||asset.exclude_cached_price_series||/除牌|终止上市|退市/.test(asset.market_status||'')){$('marketRefreshStatus').textContent='此品种未配置浏览器直连接口。商品/海外/其他指数由构建采集器更新；本次没有向服务器发送请求。';return}
   const button=$('refreshSelected');button.disabled=true;$('marketRefreshStatus').textContent='正在请求东方财富 push2his.eastmoney.com；失败后尝试腾讯 web.ifzq.gtimg.cn，保留现有缓存…';
   const failures=[],cutoff=completedBrowserDay(asset);

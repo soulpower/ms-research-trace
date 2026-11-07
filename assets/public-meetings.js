@@ -4,7 +4,7 @@
   const node=(tag,text,cls)=>{const e=document.createElement(tag);if(text)e.textContent=text;if(cls)e.className=cls;return e};
   const link=(title,url)=>{const e=node('a',title);e.href=url;return e};
   try{
-    const meetings=await ResearchPublic.json('../assets/meetings.json?v=79ea0dd55899');
+    const meetings=await ResearchPublic.json('../assets/meetings.json?v=4bb51c22c5cc');
     const id=q.get('id');
     if(id){
       const entry=meetings.find(e=>e.video_id===id);if(!entry)throw Error('未找到会议摘要');

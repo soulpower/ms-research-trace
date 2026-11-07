@@ -36,5 +36,5 @@ var ResearchPublic=(()=>{
     if(!/^[\w-]{11}$/.test(id||''))return null;
     const q=new URLSearchParams({id});if(assetId)q.set('asset',assetId);return 'meeting-reports/detail.html?'+q;
   };
-  return {index:()=>json('assets/markets.json?v=88d42963b44e'),prepare,choose,json};
+  return {index:()=>json('assets/markets.json?v=ba746536d526'),prepare,choose,json};
 })();
