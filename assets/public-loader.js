@@ -26,7 +26,7 @@ var ResearchPublic=(()=>{
     if(fallback&&query.get('_resume')!=='1'&&(!query.has('asset')||query.get('asset')==='cn:600004')){
       json(fallback).catch(()=>{}); // Selection will retry if the speculative request fails.
     }
-    return json('assets/markets.json?v=374e6f9127ee');
+    return json('assets/markets.json?v=f6493465cff6');
   }
   function choose(data,id,render){
     const ticket=++sequence,benchmark=data.entities.find(e=>e.id===id)?.benchmark_id;
