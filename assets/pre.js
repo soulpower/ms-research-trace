@@ -137,7 +137,7 @@ function rememberPrePage(){
 }
 async function init(){
   try{
-    const r=await fetch('assets/pre.json?v=7a22184e326a');if(!r.ok)throw Error(r.status);PRE=await r.json();
+    const r=await fetch('assets/pre.json?v=076084db06ba');if(!r.ok)throw Error(r.status);PRE=await r.json();
     $('preFreshness').textContent='行情快照 '+PRE.price_cutoff;$('snapshotNote').textContent=ResearchWorkspace.snapshotNote(PRE.price_cutoff);
     $('coverage').textContent=`本页纳入 ${PRE.scope.reviewed_events} 次已审阅方向事件，以及 ${PRE.scope.candidate_events} 次待复核措辞候选；另有 ${PRE.scope.unscored_views} 条观点保留未评分原因。已审阅事件中仅 ${PRE.scope.verified_date_events} 次日期已核验，其余按参考日观察，上传延迟可能造成假性滞后。`;
     const params=ResearchWorkspace.params(),view=params.get('view'),found=PRE.rows.find(r=>r.views.some(v=>v.id===view));
