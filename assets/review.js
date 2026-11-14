@@ -229,5 +229,5 @@ function setup(){
   else if(chosen?.startsWith('index:')){if(!REVIEW.index_assets.some(a=>a.id===chosen))option($('reviewIndex'),chosen,'当前指数 · 尚无核验记录');$('reviewIndex').value=chosen}
   switchSection(indexLocated||chosen?.startsWith('index:')?'index':'equity');$('reviewLoading').hidden=true;$('reviewApp').hidden=false;rememberReviewPage();
 }
-async function init(){try{const response=await fetch('assets/review.json?v=74dde78140b7');if(!response.ok)throw Error(response.status);REVIEW=await response.json();setup()}catch(e){$('reviewLoading').textContent='核验资料载入失败：'+e.message;$('reviewLoading').classList.add('error')}}
+async function init(){try{const response=await fetch('assets/review.json?v=9bb4e25ca458');if(!response.ok)throw Error(response.status);REVIEW=await response.json();setup()}catch(e){$('reviewLoading').textContent='核验资料载入失败：'+e.message;$('reviewLoading').classList.add('error')}}
 init();

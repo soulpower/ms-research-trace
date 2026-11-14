@@ -23,7 +23,7 @@ function resolveId(id){return DATA.asset_redirects?.[id]||id}
 function toneFor(v){return TONES.has(v?.tone)?v.tone:TONES.has(v?.stance)?v.stance:'待核'}
 function toneClass(tone){return 'tone-'+({'正面':'positive','负面/谨慎':'negative','中性':'neutral','混合':'mixed','条件性':'conditional','期限分歧':'mixed','方向预测':'direction','仅提及':'mention','待核':'pending'}[tone]||'pending')}
 function pairRows(rows){return Array.isArray(rows)?rows.filter(r=>Array.isArray(r)&&r.length>=2&&r[0]&&Number.isFinite(Number(r[1]))).map(r=>[String(r[0]),Number(r[1])]).sort((a,b)=>a[0].localeCompare(b[0])):[]}
-function priceAsset(e){return e?.kind==='行业'&&e.benchmark_id?DATA.entities.find(x=>x.id===e.benchmark_id)||e:e}
+function priceAsset(e){return e?.benchmark_id&&['行业','市场主题'].includes(e.kind)?DATA.entities.find(x=>x.id===e.benchmark_id)||e:e}
 function allPrices(e){const asset=priceAsset(e);return pairRows(asset?.daily_prices?.length?asset.daily_prices:asset?.prices)}
 function filteredAssets(){
   const q=$('query').value.trim().toLocaleLowerCase(),kind=$('kind').value,coverage=$('coverage').value;
@@ -154,7 +154,7 @@ function applyObservationAnchor() {
 function rawValueOnDate(day){const rows=allPrices(selected);let found=rows.find(r=>r[0]===day);if(found)return found[1];for(let i=rows.length-1;i>=0;i--)if(rows[i][0]<=day)return rows[i][1];return null}
 function renderChartNotes(quote){
   const unit=quote.unit||quote.currency||quote.quote_currency||'';
-  $('priceNote').replaceChildren();$('priceNote').append(node('span',`${selected.kind==='行业'?`行业主题“${selected.name}”的观察基准，不代表原文推荐该指数。${selected.benchmark_note||''} `:''}${quote.price_note||selected.price_note||'行情来自已登记的直接报价序列。'} 单位：${unit||'待核'}；品种/代码：${quote.instrument||quote.formal_code||'无直接报价'}。${quote.price_quote_name?'行情品种名称：'+quote.price_quote_name+'。':''}${quote.price_provider?'行情来源：'+quote.price_provider+'。':''}${quote.price_retrieved_at?(quote.price_provider==='derived'?'计算时间：':'抓取时间：')+quote.price_retrieved_at+' UTC。':''}${quote.price_retrieval_time_note?'时间说明：'+quote.price_retrieval_time_note+'。':''}${quote.price_error?'最近刷新情况：'+quote.price_error+'。':''}${quote.price_history_note?'历史覆盖说明：'+quote.price_history_note:''}`));
+  $('priceNote').replaceChildren();$('priceNote').append(node('span',`${quote.id!==selected.id?`主题“${selected.name}”的观察基准，不代表原文推荐该指数。${selected.benchmark_note||''} `:''}${quote.price_note||selected.price_note||'行情来自已登记的直接报价序列。'} 单位：${unit||'待核'}；品种/代码：${quote.instrument||quote.formal_code||'无直接报价'}。${quote.price_quote_name?'行情品种名称：'+quote.price_quote_name+'。':''}${quote.price_provider?'行情来源：'+quote.price_provider+'。':''}${quote.price_retrieved_at?(quote.price_provider==='derived'?'计算时间：':'抓取时间：')+quote.price_retrieved_at+' UTC。':''}${quote.price_retrieval_time_note?'时间说明：'+quote.price_retrieval_time_note+'。':''}${quote.price_error?'最近刷新情况：'+quote.price_error+'。':''}${quote.price_history_note?'历史覆盖说明：'+quote.price_history_note:''}`));
   if(quote.qfq_error)$('priceNote').append(node('span',' 前复权刷新情况：'+quote.qfq_error+'。'));if(quote.qfq_basis)$('priceNote').append(node('span',' 前复权口径：'+quote.qfq_basis+'。'));if(quote.detail_error)$('priceNote').append(node('span',' 日K细节刷新：'+quote.detail_error+'。'));
   if(quote.amount_precision_note)$('priceNote').append(node('span',' 成交额：'+quote.amount_precision_note));
   for(const source of quote.price_source_urls||[]){if(source?.url)$('priceNote').append(document.createTextNode(' '),safeLink((source.label||'行情来源')+' ↗',source.url))}
